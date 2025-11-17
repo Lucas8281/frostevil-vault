@@ -1,54 +1,54 @@
-import { ref } from "vue";
-import { ethers } from "ethers";
+import { ref, onMounted } from "vue";
+import { ElMessage } from "element-plus";
 
 export function useFHEVM() {
+  // 状态管理：是否连接钱包、当前钱包地址
   const isConnected = ref(false);
-  const walletAddress = ref("");
+  const account = ref(null);
 
-  // 连接钱包（模拟MetaMask等钱包连接）
+  // 连接钱包方法
   const connectWallet = async () => {
-    if (window.ethereum) {
-      try {
-        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-        walletAddress.value = accounts[0];
-        isConnected.value = true;
-      } catch (error) {
-        console.error("钱包连接失败:", error);
-        alert("连接钱包失败，请重试");
+    try {
+      // 检查是否安装 MetaMask（window.ethereum 是 MetaMask 注入的全局对象）
+      if (!window.ethereum) {
+        ElMessage.warning("请安装 MetaMask 钱包插件后重试");
+        return;
       }
-    } else {
-      alert("请安装MetaMask等钱包插件");
+      // 请求用户授权连接钱包，返回授权的账户列表
+      const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts",
+      });
+      // 更新状态：连接成功
+      account.value = accounts[0];
+      isConnected.value = true;
+      console.log("钱包连接成功:", accounts[0]);
+    } catch (error) {
+      console.error("钱包连接失败:", error);
+      ElMessage.error("钱包连接失败，请重试");
     }
   };
 
-  // 提交加密数据（模拟FHE加密）
-  const submitEncryptedData = async (encryptedData, proof) => {
-    // 实际项目中这里会调用FHEVM智能合约
-    console.log("提交加密数据:", encryptedData);
-    console.log("提交证明:", proof);
-    return new Promise((resolve) => setTimeout(resolve, 1500)); // 模拟链上交互延迟
-  };
-
-  // 获取加密统计数据
-  const getEncryptedStats = async () => {
-    // 模拟从链上获取加密的统计结果
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          totalUsers: "[加密数据]",
-          averageIncome: "[加密数据]",
-          minIncome: "[加密数据]",
-          maxIncome: "[加密数据]",
-        });
-      }, 1000);
-    });
-  };
+  // 页面挂载时自动检测是否已连接钱包（无需用户再次点击）
+  onMounted(async () => {
+    if (!window.ethereum) return;
+    try {
+      // 查询已授权的账户（不弹出授权弹窗）
+      const accounts = await window.ethereum.request({
+        method: "eth_accounts",
+      });
+      // 若已有授权账户，自动更新连接状态
+      if (accounts.length > 0) {
+        account.value = accounts[0];
+        isConnected.value = true;
+      }
+    } catch (error) {
+      console.error("检测钱包连接状态失败:", error);
+    }
+  });
 
   return {
-    isConnected,
-    walletAddress,
-    connectWallet,
-    submitEncryptedData,
-    getEncryptedStats,
+    isConnected, // 是否连接成功（布尔值）
+    account, // 连接的钱包地址（字符串/null）
+    connectWallet, // 手动连接钱包的方法
   };
 }

@@ -1,7 +1,11 @@
 {
   "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ]
+  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }],
+  "compilerOptions": {
+    // 其他配置...
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"] // 对应vite的别名配置
+    }
+  }
 }
